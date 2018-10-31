@@ -1,0 +1,55 @@
+var express = require('express');
+var router = express.Router();
+var Product= require("../models/product.js");
+var csrf =require("csurf");
+var passport = require("passport");
+var csrfProtection = csrf();
+
+router.use(csrfProtection);
+/* GET home page. */
+router.get('/', function(req, res, next) {
+  Product.find(function(err,docs){
+    var productChunks=[];
+    var chunkSize =3;
+    for(var i=0;i<docs.length;i+=chunkSize){
+      productChunks.push(docs.slice(i,i+chunkSize));
+    }
+    res.render('shop/index', { title: 'Express', products:productChunks}); //res.render('shop/index', { title: 'Express',layout:'layout2.hbs' }); có thể là với đường dẫn này , nó render ra với layout là layout 2 , còn theo mặc định là mình xét nó render ra layout.hbs 
+   // console.log(productChunks);
+  });
+  
+});
+
+
+router.get('/user/signup',function(req,res,next){
+  
+  var messages = req.flash('error');
+  console.log(req.flash('error'));
+  res.render('user/signup',{csrfToken:req.csrfToken(),messages:messages,hasErrors:messages.length>0}); // tim hieu csrf 
+});
+router.post('/user/signup',passport.authenticate('local.signup',{
+  successRedirect:'/user/profile',
+  failureRedirect: '/user/signup',
+  failureFlash: true 
+
+}));
+
+
+/*router.post('/user/signup',function(req,res,next){
+  res.redirect('/');
+})*/
+
+router.get('/user/profile',function(req,res,next){
+res.render('user/profile');
+});
+module.exports = router;
+
+router.get('/user/signin',function(req,res,next){
+  var messages = req.flash('error');
+  res.render('user/signin', {csrfToken:req.csrfToken(),messages:messages,hasErrors:messages.length>0});
+})
+router.post('/user/signin',passport.authenticate('local.signin' ,{
+  successRedirect:'/user/profile',
+  failureRedirect: '/user/signin',
+  failureFlash: true 
+}))
